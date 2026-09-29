@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скачать код из буфера</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #38bdf8;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
+        .btn-download {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            background-color: #0284c7;
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-download:hover {
+            background-color: #0369a1;
+        }
+
+        .btn-download:active {
+            transform: scale(0.98);
+        }
+
+        .status {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            text-align: center;
+            min-height: 20px;
+            word-break: break-word;
+        }
+
+        .status.success { color: #4ade80; }
+        .status.error { color: #f87171; }
+        .status.info { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Скачать буфер в файл</h1>
+
+    <div class="form-group">
+        <label for="fileName">Имя файла:</label>
+        <input type="text" id="fileName" value="script.lua" placeholder="script.lua">
+    </div>
+
+    <button class="btn-download" id="downloadBtn">Скачать из буфера</button>
+
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+    document.getElementById('downloadBtn').addEventListener('click', async function() {
+        const statusEl = document.getElementById('status');
+        let fileName = document.getElementById('fileName').value.trim();
+
+        if (!fileName) {
+            fileName = 'script.lua';
+        }
+
+        showStatus('Запрос буфера обмена...', 'info');
+
+        try {
+            if (!navigator.clipboard || !navigator.clipboard.readText) {
+                throw new Error('Clipboard API не поддерживается текущим окружением/протоколом.');
+            }
+
+            const text = await navigator.clipboard.readText();
+
+            if (!text || text.trim() === '') {
+                showStatus('Буфер обмена пуст!', 'error');
+                return;
+            }
+
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showStatus(`Файл "${fileName}" успешно сохранен!`, 'success');
+
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                showStatus('Ошибка доступа: браузер заблокировал чтение. Убедитесь, что страница открыта по HTTP/HTTPS (например, localhost), а не напрямую через файл (file://).', 'error');
+            } else {
+                showStatus(`Ошибка: ${err.message}`, 'error');
+            }
+        }
+    });
+
+    function showStatus(message, type) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+    }
+</script>
+
+</body>
+</html>
