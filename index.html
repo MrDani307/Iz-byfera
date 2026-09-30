@@ -1,170 +1,504 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Скачать код из буфера</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Редактор кода</title>
 
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0
+}
 
-        .container {
-            background-color: #1e293b;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 480px;
-        }
+body{
+    background:#1e1e1e;
+    color:#d4d4d4;
+    font-family:Arial,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:10px
+}
 
-        h1 {
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #38bdf8;
-        }
+.container{
+    width:100%;
+    max-width:800px;
+    background:#252526;
+    border:1px solid #3c3c3c;
+    border-radius:8px;
+    overflow:hidden
+}
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+.header{
+    min-height:45px;
+    padding:8px 12px;
+    background:#323233;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px
+}
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
+.filename-input{
+    background:#1e1e1e;
+    border:1px solid #3c3c3c;
+    border-radius:4px;
+    color:#d4d4d4;
+    padding:6px 10px;
+    font-size:13px;
+    outline:none;
+    flex:1;
+    min-width:140px
+}
 
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+.filename-input:focus{
+    border-color:#0e639c
+}
 
-        input[type="text"]:focus {
-            border-color: #38bdf8;
-        }
+.actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap
+}
 
-        .btn-download {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 6px;
-            background-color: #0284c7;
-            color: #ffffff;
-            font-size: 1.05rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+button{
+    border:0;
+    border-radius:4px;
+    padding:6px 10px;
+    background:#0e639c;
+    color:white;
+    cursor:pointer;
+    font-size:13px;
+    white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center
+}
 
-        .btn-download:hover {
-            background-color: #0369a1;
-        }
+button.clear{
+    background:#3c3c3c
+}
 
-        .btn-download:active {
-            transform: scale(0.98);
-        }
+button.download-btn{
+    background:#238636
+}
 
-        .status {
-            margin-top: 15px;
-            font-size: 0.85rem;
-            text-align: center;
-            min-height: 20px;
-            word-break: break-word;
-        }
+#editor{
+    height:400px;
+    overflow:hidden
+}
 
-        .status.success { color: #4ade80; }
-        .status.error { color: #f87171; }
-        .status.info { color: #38bdf8; }
-    </style>
+.cm-editor{
+    height:100%;
+    font-size:14px
+}
+
+.cm-scroller{
+    font-family:Consolas,"Courier New",monospace;
+    overflow:auto
+}
+
+.cm-gutters{
+    background:#1e1e1e!important;
+    border-right:1px solid #2d2d2d!important
+}
+
+.cm-lineNumbers .cm-gutterElement{
+    color:#858585
+}
+
+.cm-content{
+    padding:15px 0
+}
+
+.cm-line{
+    padding:0 15px
+}
+
+@media(max-width:480px){
+
+    .header{
+        flex-direction:column;
+        align-items:stretch
+    }
+
+    .actions{
+        display:grid;
+        grid-template-columns:1fr 1fr 1fr;
+        gap:6px
+    }
+
+    button{
+        padding:8px 4px;
+        text-align:center
+    }
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h1>Скачать буфер в файл</h1>
 
-    <div class="form-group">
-        <label for="fileName">Имя файла:</label>
-        <input type="text" id="fileName" value="script.lua" placeholder="script.lua">
+    <div class="header">
+
+        <input
+            type="text"
+            id="filename"
+            class="filename-input"
+            placeholder="Имя файла (напр. script.lua)"
+        >
+
+        <div class="actions">
+
+            <button
+                class="clear"
+                id="clear">
+                Очистить
+            </button>
+
+            <button id="copy">
+                Копировать
+            </button>
+
+            <button
+                id="download"
+                class="download-btn">
+                Скачать
+            </button>
+
+        </div>
+
     </div>
 
-    <button class="btn-download" id="downloadBtn">Скачать из буфера</button>
+    <div id="editor"></div>
 
-    <div id="status" class="status"></div>
 </div>
 
-<script>
-    document.getElementById('downloadBtn').addEventListener('click', async function() {
-        const statusEl = document.getElementById('status');
-        let fileName = document.getElementById('fileName').value.trim();
 
-        if (!fileName) {
-            fileName = 'script.lua';
-        }
+<script type="module">
 
-        showStatus('Запрос буфера обмена...', 'info');
+import {EditorState}
+from "https://esm.sh/@codemirror/state";
 
-        try {
-            if (!navigator.clipboard || !navigator.clipboard.readText) {
-                throw new Error('Clipboard API не поддерживается текущим окружением/протоколом.');
-            }
+import {
+    EditorView,
+    keymap,
+    lineNumbers
+}
+from "https://esm.sh/@codemirror/view";
 
-            const text = await navigator.clipboard.readText();
+import {
+    defaultKeymap,
+    indentWithTab
+}
+from "https://esm.sh/@codemirror/commands";
 
-            if (!text || text.trim() === '') {
-                showStatus('Буфер обмена пуст!', 'error');
-                return;
-            }
 
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
+// ========================================
+// ВОССТАНОВЛЕНИЕ
+// ========================================
 
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
+const savedCode =
+    localStorage.getItem("editor_code") || "";
 
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+const savedFilename =
+    localStorage.getItem("editor_filename") || "";
 
-            showStatus(`Файл "${fileName}" успешно сохранен!`, 'success');
 
-        } catch (err) {
-            if (err.name === 'NotAllowedError') {
-                showStatus('Ошибка доступа: браузер заблокировал чтение. Убедитесь, что страница открыта по HTTP/HTTPS (например, localhost), а не напрямую через файл (file://).', 'error');
-            } else {
-                showStatus(`Ошибка: ${err.message}`, 'error');
-            }
-        }
+// ========================================
+// CODEMIRROR
+// ========================================
+
+const editor =
+    document.querySelector("#editor");
+
+const view =
+    new EditorView({
+
+        state: EditorState.create({
+
+            doc:savedCode,
+
+            extensions:[
+
+                lineNumbers(),
+
+                keymap.of([
+                    indentWithTab,
+                    ...defaultKeymap
+                ]),
+
+                EditorView.theme({
+
+                    "&":{
+                        backgroundColor:"#1e1e1e",
+                        color:"#d4d4d4"
+                    },
+
+                    ".cm-content":{
+                        caretColor:"#fff"
+                    },
+
+                    ".cm-cursor":{
+                        borderLeftColor:"#fff"
+                    },
+
+                    ".cm-selectionBackground":{
+                        backgroundColor:"#264f78!important"
+                    },
+
+                    ".cm-gutters":{
+                        color:"#858585",
+                        backgroundColor:"#1e1e1e"
+                    }
+
+                })
+
+            ]
+
+        }),
+
+        parent:editor
+
     });
 
-    function showStatus(message, type) {
-        const statusEl = document.getElementById('status');
-        statusEl.textContent = message;
-        statusEl.className = `status ${type}`;
+
+// Восстанавливаем имя
+
+document.querySelector("#filename").value =
+    savedFilename;
+
+
+// ========================================
+// АВТОСОХРАНЕНИЕ
+// ========================================
+
+view.dom.addEventListener("input", () => {
+
+    localStorage.setItem(
+        "editor_code",
+        view.state.doc.toString()
+    );
+
+});
+
+document
+.querySelector("#filename")
+.addEventListener("input", () => {
+
+    localStorage.setItem(
+        "editor_filename",
+        document.querySelector("#filename").value
+    );
+
+});
+
+
+// ========================================
+// ОЧИСТИТЬ
+// ========================================
+
+document
+.querySelector("#clear")
+.addEventListener("click", () => {
+
+    view.dispatch({
+
+        changes:{
+            from:0,
+            to:view.state.doc.length,
+            insert:""
+        }
+
+    });
+
+    localStorage.setItem(
+        "editor_code",
+        ""
+    );
+
+    view.focus();
+
+});
+
+
+// ========================================
+// КОПИРОВАТЬ
+// ========================================
+
+document
+.querySelector("#copy")
+.addEventListener("click", async () => {
+
+    const text =
+        view.state.doc.toString();
+
+    try{
+
+        await navigator.clipboard.writeText(text);
+
+    }catch(error){
+
+        const textarea =
+            document.createElement("textarea");
+
+        textarea.value = text;
+
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+
+        document.body.appendChild(textarea);
+
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+
     }
+
+});
+
+
+// ========================================
+// СКАЧИВАНИЕ
+// ========================================
+
+document
+.querySelector("#download")
+.addEventListener("click", () => {
+
+    const content =
+        view.state.doc.toString();
+
+    let filename =
+        document
+        .querySelector("#filename")
+        .value
+        .trim();
+
+    if(!filename){
+        filename = "script.txt";
+    }
+
+
+    // Сохраняем данные ДО перезагрузки
+
+    localStorage.setItem(
+        "editor_code",
+        content
+    );
+
+    localStorage.setItem(
+        "editor_filename",
+        filename
+    );
+
+
+    // Говорим странице,
+    // что после загрузки нужно скачать файл
+
+    sessionStorage.setItem(
+        "download_after_reload",
+        "1"
+    );
+
+    sessionStorage.setItem(
+        "download_filename",
+        filename
+    );
+
+
+    // Перезагружаем СРАЗУ
+
+    location.reload();
+
+});
+
+
+// ========================================
+// АВТОСКАЧИВАНИЕ ПОСЛЕ ПЕРЕЗАГРУЗКИ
+// ========================================
+
+if(
+    sessionStorage.getItem(
+        "download_after_reload"
+    ) === "1"
+){
+
+    // Сразу убираем флаг,
+    // чтобы файл не скачивался повторно
+    sessionStorage.removeItem(
+        "download_after_reload"
+    );
+
+
+    const filename =
+        sessionStorage.getItem(
+            "download_filename"
+        ) || "script.txt";
+
+
+    sessionStorage.removeItem(
+        "download_filename"
+    );
+
+
+    // Небольшая задержка,
+    // чтобы CodeMirror успел загрузиться
+
+    setTimeout(() => {
+
+        const content =
+            view.state.doc.toString();
+
+
+        const blob =
+            new Blob(
+                [content],
+                {
+                    type:
+                    "application/octet-stream"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(blob);
+
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download = filename;
+
+        link.style.display = "none";
+
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+
+        setTimeout(() => {
+
+            URL.revokeObjectURL(url);
+
+        },10000);
+
+    },500);
+
+}
+
 </script>
 
 </body>
